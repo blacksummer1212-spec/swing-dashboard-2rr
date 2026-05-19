@@ -554,7 +554,7 @@ export default function Dashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: '#21262d', color: '#8b949e' }}>
-                    {['종목명', '시장', '섹터', '방향', '투입금액', '진입가', '청산가', '보유기간', '실현손익', '결과'].map(h => (
+                    {['종목명', '시장', '섹터', '방향', '투입금액', '진입가', '청산가', '손익비', '실현손익', '결과'].map(h => (
                       <th key={h} className="px-3 py-2 text-left font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -582,7 +582,9 @@ export default function Dashboard() {
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap">{t.entryStr}</td>
                         <td className="px-3 py-2.5 whitespace-nowrap">{t.exitStr}</td>
-                        <td className="px-3 py-2.5 whitespace-nowrap" style={{ color: '#8b949e' }}>{t.holdDays}</td>
+                        <td className="px-3 py-2.5 whitespace-nowrap tabular-nums" style={{ color: t.rrRatio == null ? '#8b949e' : t.rrRatio >= 0 ? '#3fb950' : '#f85149' }}>
+                          {t.rrRatio != null ? `${t.rrRatio >= 0 ? '+' : ''}${t.rrRatio.toFixed(2)}R` : '-'}
+                        </td>
                         <td className="px-3 py-2.5 whitespace-nowrap font-medium tabular-nums" style={{ color: pc }}>
                           {fmtKRW(t.profitKRW)}
                         </td>

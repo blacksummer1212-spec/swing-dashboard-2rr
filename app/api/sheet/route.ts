@@ -41,7 +41,19 @@ export async function GET() {
       const profitStr = c[15] || '';
       const noteStr   = c[18] || '';
       const market    = c[4]  || '';
+      const direction = c[6]  || '';
       const isUS      = market === '미국';
+
+      const entryPrice = parseNum(entryStr);
+      const stopPrice  = parseNum(stopStr);
+      const exitPrice  = parseNum(exitStr);
+      let rrRatio: number | null = null;
+      if (exitPrice && entryPrice && stopPrice && Math.abs(entryPrice - stopPrice) > 0) {
+        rrRatio = direction === '롱'
+          ? (exitPrice - entryPrice) / (entryPrice - stopPrice)
+          : (entryPrice - exitPrice) / (stopPrice - entryPrice);
+        rrRatio = Math.round(rrRatio * 100) / 100;
+      }
 
       trades.push({
         num:        parseInt(c[0]) || 0,
@@ -50,17 +62,18 @@ export async function GET() {
         ticker:     c[3]  || '',
         market,
         sector:     c[5]  || '',
-        direction:  c[6]  || '',
+        direction,
         amountKRW:  parseNum(c[7] || ''),
         entryStr,
-        entryPrice: parseNum(entryStr),
+        entryPrice,
         entryIsUSD: isUS ? !entryStr.includes('원') : (entryStr.includes('달러') || entryStr.includes('$')),
         stopStr,
-        stopPrice:  parseNum(stopStr),
+        stopPrice,
         stopIsUSD:  isUS ? !stopStr.includes('원') : (stopStr.includes('달러') || stopStr.includes('$')),
         exitStr,
-        result:     c[11] || '',
+        result:     c[12] || '',
         holdDays:   c[13] || '',
+        rrRatio,
         profitKRW:  Math.round(parseNum(profitStr)),
         isOpen:     !exitStr.trim(),
         isPaper:    noteStr.includes('페이퍼'),

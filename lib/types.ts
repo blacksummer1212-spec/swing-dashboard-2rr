@@ -16,6 +16,7 @@ export interface Trade {
   exitStr: string;
   result: string;
   holdDays: string;
+  rrRatio: number | null;
   profitKRW: number;
   isOpen: boolean;
   isPaper: boolean;
