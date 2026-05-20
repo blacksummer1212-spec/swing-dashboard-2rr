@@ -58,7 +58,7 @@ function parseCapitalInput(raw: string): number {
 
 function calcStopMetrics(t: Trade, usdkrwRate: number) {
   if (!t.stopPrice || !t.entryPrice) return null;
-  const isLong = t.direction === '롱';
+  const isLong = true;
 
   let entryN: number, stopN: number, curN: number | null = null;
   if (t.market === '미국') {
@@ -222,7 +222,7 @@ export default function Dashboard() {
         const cur = priceData[t.ticker];
         if (cur == null) return { ...t, currentStr: '조회 실패' };
 
-        const dir = t.direction === '롱' ? 1 : -1;
+        const dir = 1;
         let pnlPct: number;
         let currentStr: string;
 
