@@ -20,6 +20,8 @@ export interface Trade {
   profitKRW: number;
   isOpen: boolean;
   isPaper: boolean;
+  entryFxRate: number;
+  exitFxRate: number;
   currentStr?: string;
   pnlKRW?: number;
   pnlPct?: number;

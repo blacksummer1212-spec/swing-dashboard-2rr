@@ -38,8 +38,11 @@ export async function GET() {
       const entryStr  = c[8]  || '';
       const stopStr   = c[9]  || '';
       const exitStr   = c[11] || '';
-      const profitStr = c[15] || '';
-      const noteStr   = c[18] || '';
+      const fxParts   = (c[12] || '').split('/');
+      const entryFxRate = parseNum(fxParts[0] || '');
+      const exitFxRate  = fxParts[1] ? parseNum(fxParts[1]) : 0;
+      const profitStr = c[16] || '';
+      const noteStr   = c[20] || '';
       const market    = c[4]  || '';
       const direction = c[6]  || '';
       const isUS      = market === '미국';
@@ -71,12 +74,14 @@ export async function GET() {
         stopPrice,
         stopIsUSD:  isUS ? !stopStr.includes('원') : (stopStr.includes('달러') || stopStr.includes('$')),
         exitStr,
-        result:     c[12] || '',
-        holdDays:   c[13] || '',
+        result:     c[13] || '',
+        holdDays:   c[15] || '',
         rrRatio,
         profitKRW:  Math.round(parseNum(profitStr)),
-        isOpen:     !exitStr.trim(),
+        isOpen:     !exitStr.trim() || exitStr.includes('미청산'),
         isPaper:    noteStr.includes('페이퍼'),
+        entryFxRate,
+        exitFxRate,
       });
     }
 

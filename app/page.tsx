@@ -58,7 +58,7 @@ function parseCapitalInput(raw: string): number {
 
 function calcStopMetrics(t: Trade, usdkrwRate: number) {
   if (!t.stopPrice || !t.entryPrice) return null;
-  const isLong = true;
+  const isLong = t.direction !== '숏';
 
   let entryN: number, stopN: number, curN: number | null = null;
   if (t.market === '미국') {
@@ -219,17 +219,29 @@ export default function Dashboard() {
 
       const enriched = rawTrades.map(t => {
         if (!t.isOpen) return t;
+        // 진입가·투입금액 없으면 계산 불가 (빈 행 등)
+        if (!t.amountKRW || !t.entryPrice) return { ...t, currentStr: '-' };
         const cur = priceData[t.ticker];
         if (cur == null) return { ...t, currentStr: '조회 실패' };
 
-        const dir = 1;
+        const isLong = t.direction !== '숏';
+        const dir    = isLong ? 1 : -1;
         let pnlPct: number;
         let currentStr: string;
 
         if (t.market === '미국') {
-          const entryUSD = t.entryIsUSD ? t.entryPrice : t.entryPrice / usdkrw;
-          pnlPct     = dir * (cur - entryUSD) / entryUSD * 100;
+          let shares: number;
+          if (!t.entryIsUSD) {
+            shares = t.amountKRW / t.entryPrice;
+          } else if (t.entryFxRate > 0) {
+            shares = t.amountKRW / (t.entryPrice * t.entryFxRate);
+          } else {
+            shares = t.amountKRW / (t.entryPrice * usdkrw);
+          }
+          const currentValueKRW = shares * cur * usdkrw;
+          pnlPct     = dir * (currentValueKRW - t.amountKRW) / t.amountKRW * 100;
           currentStr = `${cur.toFixed(2)}달러`;
+          return { ...t, currentStr, pnlPct, pnlKRW: Math.round(dir * (currentValueKRW - t.amountKRW)) };
         } else {
           pnlPct     = dir * (cur - t.entryPrice) / t.entryPrice * 100;
           currentStr = `${Math.round(cur).toLocaleString()}원`;
