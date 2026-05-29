@@ -56,6 +56,15 @@ function parseCapitalInput(raw: string): number {
   return Math.round(parseFloat(s) || 0);
 }
 
+function calcFxPnL(t: Trade): number {
+  if (t.market !== '미국' || t.isOpen) return 0;
+  const { entryPrice, exitPrice, entryFxRate, exitFxRate, amountKRW, direction } = t;
+  if (!entryPrice || !exitPrice || !entryFxRate || !exitFxRate || !amountKRW) return 0;
+  const fxDelta = (exitFxRate - entryFxRate) / entryFxRate;
+  const ratio = direction === '롱' ? exitPrice / entryPrice : 1 - exitPrice / entryPrice;
+  return Math.round(amountKRW * ratio * fxDelta);
+}
+
 function calcStopMetrics(t: Trade, usdkrwRate: number) {
   if (!t.stopPrice || !t.entryPrice) return null;
   const isLong = t.direction !== '숏';
@@ -272,7 +281,8 @@ export default function Dashboard() {
   const totalInvested = open.reduce((s, t) => s + t.amountKRW, 0);
   const unrealizedPnL = Math.round(open.reduce((s, t) => s + (t.pnlKRW ?? 0), 0));
   const unrealizedPct = totalInvested > 0 ? unrealizedPnL / totalInvested * 100 : 0;
-  const realizedPnL   = Math.round(closed.reduce((s, t) => s + t.profitKRW, 0));
+  const realizedPnL   = Math.round(closed.reduce((s, t) => s + t.profitKRW + calcFxPnL(t), 0));
+  const fxPnLTotal    = Math.round(closed.reduce((s, t) => s + calcFxPnL(t), 0));
   const totalPnL      = unrealizedPnL + realizedPnL;
   const cash          = totalCapital > 0 ? Math.max(totalCapital + realizedPnL - totalInvested, 0) : 0;
   const cashPct       = totalCapital > 0 ? cash / Math.max(totalCapital + totalPnL, totalCapital) * 100 : 0;
@@ -372,6 +382,7 @@ export default function Dashboard() {
           {
             label: '실현손익',
             value: fmtKRW(realizedPnL),
+            sub:   fxPnLTotal !== 0 ? `환율손익 포함 ${fmtKRW(fxPnLTotal)}` : undefined,
             color: realizedPnL >= 0 ? '#3fb950' : '#f85149',
           },
           {
@@ -566,14 +577,19 @@ export default function Dashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: '#21262d', color: '#8b949e' }}>
-                    {['종목명', '시장', '섹터', '방향', '투입금액', '진입가', '청산가', '손익비', '실현손익', '결과'].map(h => (
+                    {['종목명', '시장', '섹터', '방향', '투입금액', '진입가', '청산가', '손익비', '주가손익', '환율손익', '합산손익', '결과'].map(h => (
                       <th key={h} className="px-3 py-2 text-left font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {closed.map((t, i) => {
-                    const pc = t.profitKRW >= 0 ? '#3fb950' : '#f85149';
+                    const fxPnL  = calcFxPnL(t);
+                    const total  = t.profitKRW + fxPnL;
+                    const pc     = t.profitKRW >= 0 ? '#3fb950' : '#f85149';
+                    const fxC    = fxPnL > 0 ? '#3fb950' : fxPnL < 0 ? '#f85149' : '#8b949e';
+                    const totC   = total >= 0 ? '#3fb950' : '#f85149';
+                    const hasFx  = t.market === '미국' && t.entryFxRate > 0 && t.exitFxRate > 0;
                     return (
                       <tr key={t.num} style={{ background: i % 2 === 0 ? '#1c2128' : '#161b22' }}>
                         <td className="px-3 py-2.5 font-medium whitespace-nowrap">
@@ -599,6 +615,17 @@ export default function Dashboard() {
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap font-medium tabular-nums" style={{ color: pc }}>
                           {fmtKRW(t.profitKRW)}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap tabular-nums" style={{ color: hasFx ? fxC : '#8b949e' }}>
+                          {hasFx ? fmtKRW(fxPnL) : '—'}
+                          {hasFx && t.entryFxRate > 0 && t.exitFxRate > 0 && (
+                            <span className="ml-1 text-xs" style={{ color: '#555' }}>
+                              {Math.round(t.entryFxRate)}→{Math.round(t.exitFxRate)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap font-bold tabular-nums" style={{ color: hasFx ? totC : pc }}>
+                          {hasFx ? fmtKRW(total) : fmtKRW(t.profitKRW)}
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap">
                           <span className="px-2 py-0.5 rounded text-xs font-medium" style={{

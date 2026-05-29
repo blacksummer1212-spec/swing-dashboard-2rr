@@ -74,6 +74,7 @@ export async function GET() {
         stopPrice,
         stopIsUSD:  isUS ? !stopStr.includes('원') : (stopStr.includes('달러') || stopStr.includes('$')),
         exitStr,
+        exitPrice,
         result:     c[13] || '',
         holdDays:   c[15] || '',
         rrRatio,

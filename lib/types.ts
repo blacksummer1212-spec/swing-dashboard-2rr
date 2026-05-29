@@ -14,6 +14,7 @@ export interface Trade {
   stopPrice: number;
   stopIsUSD: boolean;
   exitStr: string;
+  exitPrice: number;
   result: string;
   holdDays: string;
   rrRatio: number | null;
